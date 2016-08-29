@@ -56,7 +56,7 @@ Bounce debouncer4 = Bounce();
 Bounce debouncer5 = Bounce();
 
 void setup() {
-   Serial.begin(9600);
+   //Serial.begin(9600);
   pinMode(pwrLED, OUTPUT);
   pinMode(statLED, OUTPUT);
   pinMode(statBUTTON, INPUT_PULLUP);
@@ -109,14 +109,14 @@ char * numToOSCAddress( int pin){
 }
 
 void LEDset(OSCMessage &msg, int addrOffset) {
-  Serial.print("in LEDset");
-  Serial.println(addrOffset);
+  //Serial.print("in LEDset");
+  //Serial.println(addrOffset);
   for(byte pin = 0; pin < NUM_BUTTONS; pin++){
     int pinMatched = msg.match(numToOSCAddress(pin), addrOffset);
-    Serial.println(pinMatched);
+//    Serial.println(pinMatched);
     if(pinMatched){
       if (msg.isInt(0)){
-        Serial.print(msg.getInt(0));
+        //Serial.print(msg.getInt(0));
         digitalWrite(LED_PIN[pin],msg.getInt(0));
       }
     }
@@ -135,7 +135,7 @@ void loop() {
     OSCBundle button;
     if ( debouncer1.fell() || debouncer1.rose() ) {
       button.add("/button/1").add((int)debouncer1.read());
-      Serial.println(debouncer1.read());
+      //Serial.println(debouncer1.read());
       change = true;
     }
     if ( debouncer2.fell() || debouncer2.rose() ) {
@@ -155,7 +155,7 @@ void loop() {
       change = true;
     }
     if (change == true) {
-      Serial.println("send osc");
+      //Serial.println("send osc");
       Udp.beginPacket(outIp, QLabPort);
       button.send(Udp); // send the bytes to the SLIP stream
       Udp.endPacket(); // mark the end of the OSC Packet
@@ -167,9 +167,9 @@ void loop() {
       while(size--) {
         msgIn.fill(Udp.read());
       }
-      Serial.println("");
+      //Serial.println("");
       if(!msgIn.hasError()) {
-        Serial.println("recive OSC");
+        //Serial.println("recive OSC");
         msgIn.route("/LED", LEDset);
       }
     }
@@ -183,7 +183,7 @@ void loop() {
     if (digitalRead(statBUTTON) == LOW) {
       isConct = 0;
       if (onoff == 0) {
-        Serial.println("turning ON"); //<-------Serial print
+        //Serial.println("turning ON"); //<-------Serial print
         for (int i = 0; i < 10; i++) {
           digitalWrite(statLED, HIGH);
           delay(100);
@@ -198,7 +198,7 @@ void loop() {
             delay(100);
           }
         }
-        Serial.println("ethernet ON"); //<-------Serial print
+        //Serial.println("ethernet ON"); //<-------Serial print
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
@@ -214,7 +214,7 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
         }
-        Serial.println("NETPwrCtrl conctet"); //<-------Serial print
+        //Serial.println("NETPwrCtrl conctet"); //<-------Serial print
         NETPwrIP = Udp.remoteIP();
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
@@ -225,7 +225,7 @@ void loop() {
         Udp.write(0x0A);
         Udp.endPacket();
         Udp.stop();
-        Serial.println("NETPwrCtrl ON"); //<-------Serial print
+        //Serial.println("NETPwrCtrl ON"); //<-------Serial print
         Udp.begin(inPort);
         while(isConct != 1){
           OSCMessage msgOut("/ping");
@@ -251,11 +251,11 @@ void loop() {
             delay(10);
           }
         }
-        Serial.println("OSC confirm"); //<-------Serial print
+        //Serial.println("OSC confirm"); //<-------Serial print
         onoff = 1;
         digitalWrite(statLED, HIGH);
       }else{
-        Serial.println("turning OFF");
+        //Serial.println("turning OFF");
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerOFF");
@@ -281,7 +281,7 @@ void loop() {
             delay(10);
           }
         }
-        Serial.println("OSC confirm"); //<-------Serial print
+        //Serial.println("OSC confirm"); //<-------Serial print
         for (int i = 0; i < 120; i++) {
           digitalWrite(statLED, LOW);
           delay(500);
@@ -315,7 +315,7 @@ void loop() {
         Udp.write(0x0A);
         Udp.endPacket();
         Udp.stop();
-        Serial.println("NETPwrCtrl OFF"); //<-------Serial print
+        //Serial.println("NETPwrCtrl OFF"); //<-------Serial print
         onoff = 0;
         digitalWrite(statLED, LOW);
       }
