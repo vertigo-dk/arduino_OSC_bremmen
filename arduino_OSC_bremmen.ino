@@ -19,8 +19,8 @@
 #define statBUTTON 19         //19 = A1
 
 byte BUTTON_PIN[NUM_BUTTONS] = { 2, 3, 4, 5, 6 };
-byte LED_PIN[NUM_BUTTONS] = { 7, 8, 9, A3, 11 };
-
+byte LED_PIN[NUM_BUTTONS] = {8, 9, A3, 11, 7 };
+int rotoStat = 0;
 /**************************************************/
 /*            Ethernet
 /**************************************************/
@@ -39,9 +39,9 @@ const unsigned int NETPwrCtrl_outPort = 75;
 const unsigned int NETPwrCtrl_inPort = 77;
 
 IPAddress broardcast(255, 255, 255, 255);
-IPAddress outIp(192, 168, 1, 38);
-
-IPAddress NETPwrIP(192, 168, 1, 61);
+IPAddress outIp(192, 168, 1, 100);
+IPAddress inIp(192, 168, 1, 150);
+IPAddress NETPwrIP(192, 168, 1, 50);
 
 boolean isConct = false;
 boolean onoff = false;
@@ -56,7 +56,7 @@ Bounce debouncer4 = Bounce();
 Bounce debouncer5 = Bounce();
 
 void setup() {
-   //Serial.begin(9600);
+   Serial.begin(9600);
   pinMode(pwrLED, OUTPUT);
   pinMode(statLED, OUTPUT);
   pinMode(statBUTTON, INPUT_PULLUP);
@@ -83,10 +83,14 @@ void setup() {
 
 }
 
-void isPing(OSCMessage &msg, int addrOffset ) {
+void isPing(OSCMessage &msg, int addrOffset) {
+  Serial.print("ping  ");
+  Serial.println(msg.getInt(0));
   if(msg.isInt(0)) {
     if (msg.getInt(0) == 2016) {
+      Serial.println("ping good  ");
       isConct = 1;
+      return;
     }
   }
   isConct = 0;
@@ -109,14 +113,14 @@ char * numToOSCAddress( int pin){
 }
 
 void LEDset(OSCMessage &msg, int addrOffset) {
-  //Serial.print("in LEDset");
-  //Serial.println(addrOffset);
+  Serial.print("in LEDset");
+  Serial.println(addrOffset);
   for(byte pin = 0; pin < NUM_BUTTONS; pin++){
     int pinMatched = msg.match(numToOSCAddress(pin), addrOffset);
 //    Serial.println(pinMatched);
     if(pinMatched){
       if (msg.isInt(0)){
-        //Serial.print(msg.getInt(0));
+        Serial.print(msg.getInt(0));
         digitalWrite(LED_PIN[pin],msg.getInt(0));
       }
     }
@@ -126,16 +130,28 @@ void LEDset(OSCMessage &msg, int addrOffset) {
 void loop() {
   if (onoff == 1) {
     boolean change = false;
+    OSCBundle button;
+
+    if (rotoStat != map(analogRead(A0)+4, 0, 900, 0, 9)) {
+      if(map(analogRead(A0)+4, 0, 900, 0, 9) != 0) {
+        rotoStat = map(analogRead(A0)+4, 0, 900, 0, 9);
+        button.add("/rot").add((int)rotoStat);
+        Serial.print("rotoStat   ");
+        Serial.println(rotoStat);
+        change = true;
+      }
+    }
+    
     // Update the Bounce instances :
     debouncer1.update();
     debouncer2.update();
     debouncer3.update();
     debouncer4.update();
     debouncer5.update();
-    OSCBundle button;
+    
     if ( debouncer1.fell() || debouncer1.rose() ) {
       button.add("/button/1").add((int)debouncer1.read());
-      //Serial.println(debouncer1.read());
+      Serial.println(debouncer1.read());
       change = true;
     }
     if ( debouncer2.fell() || debouncer2.rose() ) {
@@ -155,7 +171,7 @@ void loop() {
       change = true;
     }
     if (change == true) {
-      //Serial.println("send osc");
+      Serial.println("send osc");
       Udp.beginPacket(outIp, QLabPort);
       button.send(Udp); // send the bytes to the SLIP stream
       Udp.endPacket(); // mark the end of the OSC Packet
@@ -167,9 +183,9 @@ void loop() {
       while(size--) {
         msgIn.fill(Udp.read());
       }
-      //Serial.println("");
+      Serial.println("");
       if(!msgIn.hasError()) {
-        //Serial.println("recive OSC");
+        Serial.println("recive OSC");
         msgIn.route("/LED", LEDset);
       }
     }
@@ -183,28 +199,27 @@ void loop() {
     if (digitalRead(statBUTTON) == LOW) {
       isConct = 0;
       if (onoff == 0) {
-        //Serial.println("turning ON"); //<-------Serial print
+        Serial.println("turning ON"); //<-------Serial print
         for (int i = 0; i < 10; i++) {
           digitalWrite(statLED, HIGH);
           delay(100);
           digitalWrite(statLED, LOW);
           delay(100);
         }
-        while(Ethernet.begin(mac, 2000)) {
-          for (int i = 0; i < 4; i++) {
-            digitalWrite(statLED, HIGH);
-            delay(50);
-            digitalWrite(statLED, LOW);
-            delay(100);
-          }
+        Ethernet.begin(mac, inIp);
+        for (int i = 0; i < 4; i++) {
+          digitalWrite(statLED, HIGH);
+          delay(50);
+          digitalWrite(statLED, LOW);
+          delay(100);
         }
-        //Serial.println("ethernet ON"); //<-------Serial print
+        Serial.println("ethernet ON"); //<-------Serial print
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
           digitalWrite(statLED, HIGH);
-          Udp.beginPacket(broardcast, NETPwrCtrl_outPort);
+          Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
           Udp.write("wer da?");
           Udp.write(0x0D);
           Udp.write(0x0A);
@@ -214,8 +229,7 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
         }
-        //Serial.println("NETPwrCtrl conctet"); //<-------Serial print
-        NETPwrIP = Udp.remoteIP();
+        Serial.println("NETPwrCtrl conctet"); //<-------Serial print
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
         Udp.write(0b10000111);
@@ -225,7 +239,7 @@ void loop() {
         Udp.write(0x0A);
         Udp.endPacket();
         Udp.stop();
-        //Serial.println("NETPwrCtrl ON"); //<-------Serial print
+        Serial.println("NETPwrCtrl ON"); //<-------Serial print
         Udp.begin(inPort);
         while(isConct != 1){
           OSCMessage msgOut("/ping");
@@ -235,9 +249,9 @@ void loop() {
           Udp.endPacket(); // mark the end of the OSC Packet
           OSCMessage msgIn;
           digitalWrite(statLED, HIGH);
-          delay(70);
+          delay(60);
           digitalWrite(statLED, LOW);
-          delay(50);
+          delay(40);
           for (int i = 0; i < 10; i++) {
             int size;
             if( (size = Udp.parsePacket())>0) {
@@ -251,11 +265,11 @@ void loop() {
             delay(10);
           }
         }
-        //Serial.println("OSC confirm"); //<-------Serial print
+        Serial.println("OSC confirm"); //<-------Serial print
         onoff = 1;
         digitalWrite(statLED, HIGH);
       }else{
-        //Serial.println("turning OFF");
+        Serial.println("turning OFF");
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerOFF");
@@ -281,7 +295,7 @@ void loop() {
             delay(10);
           }
         }
-        //Serial.println("OSC confirm"); //<-------Serial print
+        Serial.println("OSC confirm"); //<-------Serial print
         for (int i = 0; i < 120; i++) {
           digitalWrite(statLED, LOW);
           delay(500);
@@ -315,7 +329,7 @@ void loop() {
         Udp.write(0x0A);
         Udp.endPacket();
         Udp.stop();
-        //Serial.println("NETPwrCtrl OFF"); //<-------Serial print
+        Serial.println("NETPwrCtrl OFF"); //<-------Serial print
         onoff = 0;
         digitalWrite(statLED, LOW);
       }
