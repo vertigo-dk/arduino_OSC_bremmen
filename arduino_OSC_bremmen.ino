@@ -33,7 +33,7 @@ byte mac[6] = {0x90, 0xA2, 0xDA, 0x10, 0x38, 0x33};
 
 //port numbers
 const unsigned int QLabPort = 53000;
-const unsigned int outPort = 9009;
+const unsigned int outPort = 53000;
 const unsigned int inPort = 8888;
 const unsigned int NETPwrCtrl_outPort = 75;
 const unsigned int NETPwrCtrl_inPort = 77;
