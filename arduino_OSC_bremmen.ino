@@ -1,20 +1,4 @@
 /**************************************************/
-/*              Defines
-/**************************************************/
-#define NUM_BUTTONS 5
-
-#define pwrLED 12
-#define statLED 13
-#define statBUTTON 19         //19 = A1
-
-byte BUTTON_PIN[NUM_BUTTONS] = {
-  2, 3, 4, 5, 6
-};
-byte LED_PIN[NUM_BUTTONS] = {
-  7, 8, 9, A3, 11
-};
-
-/**************************************************/
 /*              INCLUDE
 /**************************************************/
 #include <SPI.h>
@@ -25,18 +9,17 @@ byte LED_PIN[NUM_BUTTONS] = {
 
 #include <Bounce2.h>
 
-#include "SerialDebug.h"
+/**************************************************/
+/*              Defines
+/**************************************************/
+#define NUM_BUTTONS 5
 
-#if defined(__MK20DX128__)  //if it id a teensy include a MAC addr. read
+#define pwrLED 12
+#define statLED 13
+#define statBUTTON 19         //19 = A1
 
-#else
-// Enter a MAC address for your controller below.
-// Newer Ethernet shields have a MAC address printed on a sticker on the shield
-byte read_mac(byte *mac) {
- byte uniqMAC[] = {0x90, 0xA2, 0xDA, 0x10, 0x39, 0x43};
- memcpy(mac, uniqMAC, 6);
-}
-#endif
+byte BUTTON_PIN[NUM_BUTTONS] = { 2, 3, 4, 5, 6 };
+byte LED_PIN[NUM_BUTTONS] = { 7, 8, 9, A3, 11 };
 
 /**************************************************/
 /*            Ethernet
@@ -72,52 +55,6 @@ Bounce debouncer3 = Bounce();
 Bounce debouncer4 = Bounce();
 Bounce debouncer5 = Bounce();
 
-void waitForPowerOn() {
-  while(digitalRead(statBUTTON) == HIGH) {
-    delay(100);
-  }
-}
-
-void isPing(OSCMessage &msg) {
-  if(msg.isInt(0)) {
-    if (msg.getInt(0) == 2016) {
-      isConct = 1;
-      return;
-    }
-  }
-  isConct = 0;
-}
-
-int pingBack(int timeOut) {
-  OSCMessage msgOut("/ping");
-  msgOut.add("powerON");
-  Udp.beginPacket(outIp, QLabPort);
-  msgOut.send(Udp); // send the bytes to the SLIP stream
-  Udp.endPacket(); // mark the end of the OSC Packet
-  Serial.println("send OSC");
-  OSCMessage msgIn;
-  //delay(timeOut);
-
-  delay(100);
-  for (int i = 0; i < timeOut; i++) {
-    int size;
-    if( (size = Udp.parsePacket())>0) {
-      while(size--) {
-        msgIn.fill(Udp.read());
-      }
-      if(!msgIn.hasError()) {
-        msgIn.route("/ping", isPing);
-        return isConct;
-      }
-    }
-    delay(10);
-  }
-
-  msgOut.empty(); // free space occupied by message
-  msgIn.empty();
-  return 0;
-}
-
 void setup() {
    Serial.begin(9600);
   pinMode(pwrLED, OUTPUT);
@@ -144,6 +81,15 @@ void setup() {
   debouncer5.attach(BUTTON_PIN[4]);
   debouncer5.interval(5); // interval in ms
 
+}
+
+void isPing(OSCMessage &msg, int addrOffset ) {
+  if(msg.isInt(0)) {
+    if (msg.getInt(0) == 2016) {
+      isConct = 1;
+    }
+  }
+  isConct = 0;
 }
 
 char * numToOSCAddress( int pin){
@@ -244,7 +190,7 @@ void loop() {
           digitalWrite(statLED, LOW);
           delay(100);
         }
-        while(Ethernet.begin(mac, 1000) == 0) {
+        while(Ethernet.begin(mac, 2000)) {
           for (int i = 0; i < 4; i++) {
             digitalWrite(statLED, HIGH);
             delay(50);
@@ -299,7 +245,7 @@ void loop() {
                 msgIn.fill(Udp.read());
               }
               if(!msgIn.hasError()) {
-                msgIn.route("/ping", isPing);
+                msgIn.route("/ping", isPing, 0);
               }
             }
             delay(10);
@@ -336,8 +282,29 @@ void loop() {
           }
         }
         Serial.println("OSC confirm"); //<-------Serial print
-        delay(1000);
+        for (int i = 0; i < 120; i++) {
+          digitalWrite(statLED, LOW);
+          delay(500);
+          digitalWrite(statLED, HIGH);
+          delay(500);
+        }
+        
         Udp.stop();
+        Udp.begin(NETPwrCtrl_inPort);
+        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+        Udp.write("Sw");
+        Udp.write(0b10100);
+        Udp.write("user1");
+        Udp.write("1234");
+        Udp.write(0x0D);
+        Udp.write(0x0A);
+        Udp.endPacket();
+        for (int i = 0; i < 300; i++) {
+          digitalWrite(statLED, LOW);
+          delay(500);
+          digitalWrite(statLED, HIGH);
+          delay(500);
+        }
         Udp.begin(NETPwrCtrl_inPort);
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
