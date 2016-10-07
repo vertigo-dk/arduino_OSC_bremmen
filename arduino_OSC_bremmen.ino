@@ -38,8 +38,8 @@ const unsigned int inPort = 8888;
 const unsigned int NETPwrCtrl_outPort = 75;
 const unsigned int NETPwrCtrl_inPort = 77;
 
-IPAddress broardcast(255, 255, 255, 255);
-IPAddress outIp(192, 168, 1, 100);
+IPAddress broadcast(255, 255, 255, 255);
+IPAddress outIp(192, 168, 1, 110);
 IPAddress inIp(192, 168, 1, 150);
 IPAddress NETPwrIP(192, 168, 1, 50);
 
@@ -56,7 +56,7 @@ Bounce debouncer4 = Bounce();
 Bounce debouncer5 = Bounce();
 
 void setup() {
-   Serial.begin(9600);
+  Serial.begin(9600);
   pinMode(pwrLED, OUTPUT);
   pinMode(statLED, OUTPUT);
   pinMode(statBUTTON, INPUT_PULLUP);
@@ -229,10 +229,39 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
         }
-        Serial.println("NETPwrCtrl conctet"); //<-------Serial print
+        Serial.println("NETPwrCtrl conected"); //<-------Serial print
+
+//        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+//        Udp.write("Sw");
+//        Udp.write(0b10000111);
+//        Udp.write("user1");
+//        Udp.write("1234");
+//        Udp.write(0x0D);
+//        Udp.write(0x0A);
+//        Udp.endPacket();
+//        Udp.stop();
+//        Serial.println("NETPwrCtrl ON"); //<-------Serial print
+//        Udp.begin(inPort);
+
+
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
-        Udp.write(0b10000111);
+        Udp.write(0b10000100);
+        Udp.write("user1");
+        Udp.write("1234");
+        Udp.write(0x0D);
+        Udp.write(0x0A);
+        Udp.endPacket();
+        
+        for (int i = 0; i < 60; i++) {
+          digitalWrite(statLED, LOW);
+          delay(500);
+          digitalWrite(statLED, HIGH);
+          delay(500);
+        }
+        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+        Udp.write("Sw");
+        Udp.write(0b10000110);
         Udp.write("user1");
         Udp.write("1234");
         Udp.write(0x0D);
@@ -240,7 +269,8 @@ void loop() {
         Udp.endPacket();
         Udp.stop();
         Serial.println("NETPwrCtrl ON"); //<-------Serial print
-        Udp.begin(inPort);
+        
+        Udp.begin(inPort);       
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerON");
@@ -307,7 +337,7 @@ void loop() {
         Udp.begin(NETPwrCtrl_inPort);
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
-        Udp.write(0b10100);
+        Udp.write(0b10000100);
         Udp.write("user1");
         Udp.write("1234");
         Udp.write(0x0D);
@@ -322,7 +352,7 @@ void loop() {
         Udp.begin(NETPwrCtrl_inPort);
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
-        Udp.write(0b10000);
+        Udp.write(0b10000000);
         Udp.write("user1");
         Udp.write("1234");
         Udp.write(0x0D);

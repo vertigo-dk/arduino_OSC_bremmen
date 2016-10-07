@@ -9,6 +9,9 @@
 
 # ports
 arduino -> NETPwrCtrl '75'
+
 NETPwrCtrl -> arduino '77'
+
 arduino -> Computer '53000'
+
 Computer -> arduino '8888'
