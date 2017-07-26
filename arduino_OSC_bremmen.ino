@@ -1,6 +1,6 @@
-/**************************************************/
-/*              INCLUDE
-/**************************************************/
+////////////////////////////////////////////////////
+//              INCLUDE                           //
+////////////////////////////////////////////////////
 #include <SPI.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
@@ -9,21 +9,21 @@
 
 #include <Bounce2.h>
 
-/**************************************************/
-/*              Defines
-/**************************************************/
+////////////////////////////////////////////////////
+//               Defines
+////////////////////////////////////////////////////
 #define NUM_BUTTONS 5
 
 #define pwrLED 12
 #define statLED 13
 #define statBUTTON 19         //19 = A1
 
-byte BUTTON_PIN[NUM_BUTTONS] = { 2, 3, 4, 5, 6 };
-byte LED_PIN[NUM_BUTTONS] = {8, 9, A3, 11, 7 };
+char BUTTON_PIN[NUM_BUTTONS] = { 2, 3, 4, 5, 6 };
+char LED_PIN[NUM_BUTTONS] = {8, 9, A3, 11, 7 };
 int rotoStat = 0;
-/**************************************************/
-/*            Ethernet
-/**************************************************/
+////////////////////////////////////////////////////
+//            Ethernet
+////////////////////////////////////////////////////
 //UDP communication
 EthernetUDP Udp;
 
@@ -46,14 +46,11 @@ IPAddress NETPwrIP(192, 168, 1, 50);
 boolean isConct = false;
 boolean onoff = false;
 
-/**************************************************/
-/*            debounce
-/**************************************************/
-Bounce debouncer1 = Bounce();
-Bounce debouncer2 = Bounce();
-Bounce debouncer3 = Bounce();
-Bounce debouncer4 = Bounce();
-Bounce debouncer5 = Bounce();
+////////////////////////////////////////////////////
+//            debounce
+////////////////////////////////////////////////////
+
+Bounce debouncer[NUM_BUTTONS] = {Bounce(), Bounce(), Bounce(), Bounce(), Bounce()};
 
 void setup() {
   Serial.begin(9600);
@@ -69,18 +66,9 @@ void setup() {
 
   for (int i = 0; i < NUM_BUTTONS; i++) {
     pinMode(BUTTON_PIN[i], INPUT_PULLUP);
+    debouncer[i].attach(BUTTON_PIN[i]);
+    debouncer[i].interval(5);
   }
-  debouncer1.attach(BUTTON_PIN[0]);
-  debouncer1.interval(5); // interval in ms
-  debouncer2.attach(BUTTON_PIN[1]);
-  debouncer2.interval(5); // interval in ms
-  debouncer3.attach(BUTTON_PIN[2]);
-  debouncer3.interval(5); // interval in ms
-  debouncer4.attach(BUTTON_PIN[3]);
-  debouncer4.interval(5); // interval in ms
-  debouncer5.attach(BUTTON_PIN[4]);
-  debouncer5.interval(5); // interval in ms
-
 }
 
 void isPing(OSCMessage &msg, int addrOffset) {
@@ -143,33 +131,41 @@ void loop() {
     }
 
     // Update the Bounce instances :
-    debouncer1.update();
-    debouncer2.update();
-    debouncer3.update();
-    debouncer4.update();
-    debouncer5.update();
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+      debouncer[i].update();
+    }
 
-    if ( debouncer1.fell() || debouncer1.rose() ) {
-      button.add("/button/1").add((int)debouncer1.read());
-      Serial.println(debouncer1.read());
-      change = true;
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+      if ( debouncer[i].fell() || debouncer[i].rose() ) {
+        char str[9] = "/button/";
+        str[8] = 48 + i;
+        button.add(str).add((int)debouncer[i].read());
+        Serial.println(debouncer[i].read());
+        change = true;
+      }
     }
-    if ( debouncer2.fell() || debouncer2.rose() ) {
-      button.add("/button/2").add((int)debouncer2.read());
-      change = true;
-    }
-    if ( debouncer3.fell() || debouncer3.rose() ) {
-      button.add("/button/3").add((int)debouncer3.read());
-      change = true;
-    }
-    if ( debouncer4.fell() || debouncer4.rose() ) {
-      button.add("/button/4").add((int)debouncer4.read());
-      change = true;
-    }
-    if ( debouncer5.fell() || debouncer5.rose() ) {
-      button.add("/button/5").add((int)debouncer5.read());
-      change = true;
-    }
+
+    // if ( debouncer1.fell() || debouncer1.rose() ) {
+    //   button.add("/button/1").add((int)debouncer1.read());
+    //   Serial.println(debouncer1.read());
+    //   change = true;
+    // }
+    // if ( debouncer2.fell() || debouncer2.rose() ) {
+    //   button.add("/button/2").add((int)debouncer2.read());
+    //   change = true;
+    // }
+    // if ( debouncer3.fell() || debouncer3.rose() ) {
+    //   button.add("/button/3").add((int)debouncer3.read());
+    //   change = true;
+    // }
+    // if ( debouncer4.fell() || debouncer4.rose() ) {
+    //   button.add("/button/4").add((int)debouncer4.read());
+    //   change = true;
+    // }
+    // if ( debouncer5.fell() || debouncer5.rose() ) {
+    //   button.add("/button/5").add((int)debouncer5.read());
+    //   change = true;
+    // }
     if (change == true) {
       Serial.println("send osc");
       Udp.beginPacket(outIp, QLabPort);
