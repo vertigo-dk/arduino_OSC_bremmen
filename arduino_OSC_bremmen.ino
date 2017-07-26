@@ -15,7 +15,6 @@
 #define NUM_BUTTONS 5
 
 #define pwrLED 12
-#define statLED 13
 #define statBUTTON 19         //19 = A1
 
 char BUTTON_PIN[NUM_BUTTONS] = { 2, 3, 4, 5, 6 };
@@ -55,10 +54,12 @@ Bounce debouncer[NUM_BUTTONS] = {Bounce(), Bounce(), Bounce(), Bounce(), Bounce(
 void setup() {
   Serial.begin(9600);
   pinMode(pwrLED, OUTPUT);
-  pinMode(statLED, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(statBUTTON, INPUT_PULLUP);
   digitalWrite(pwrLED, HIGH);
-  digitalWrite(statLED, LOW);
+  digitalWrite(LED_BUILTIN, LOW);
+
+  Ethernet.begin(mac, inIp);
 
   for (int i = 0; i < NUM_BUTTONS; i++) {
     pinMode(LED_PIN[i], OUTPUT);
@@ -197,31 +198,23 @@ void loop() {
       if (onoff == 0) {
         Serial.println("turning ON"); //<-------Serial print
         for (int i = 0; i < 10; i++) {
-          digitalWrite(statLED, HIGH);
+          digitalWrite(LED_BUILTIN, HIGH);
           delay(100);
-          digitalWrite(statLED, LOW);
-          delay(100);
-        }
-        Ethernet.begin(mac, inIp);
-        for (int i = 0; i < 4; i++) {
-          digitalWrite(statLED, HIGH);
-          delay(50);
-          digitalWrite(statLED, LOW);
+          digitalWrite(LED_BUILTIN, LOW);
           delay(100);
         }
-        Serial.println("ethernet ON"); //<-------Serial print
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
-          digitalWrite(statLED, HIGH);
+          digitalWrite(LED_BUILTIN, HIGH);
           Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
           Udp.write("wer da?");
           Udp.write(0x0D);
           Udp.write(0x0A);
           Udp.endPacket();
           delay(100);
-          digitalWrite(statLED, LOW);
+          digitalWrite(LED_BUILTIN, LOW);
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
         }
@@ -250,9 +243,9 @@ void loop() {
         Udp.endPacket();
 
         for (int i = 0; i < 60; i++) {
-          digitalWrite(statLED, LOW);
+          digitalWrite(LED_BUILTIN, LOW);
           delay(500);
-          digitalWrite(statLED, HIGH);
+          digitalWrite(LED_BUILTIN, HIGH);
           delay(500);
         }
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
@@ -274,9 +267,9 @@ void loop() {
           msgOut.send(Udp); // send the bytes to the SLIP stream
           Udp.endPacket(); // mark the end of the OSC Packet
           OSCMessage msgIn;
-          digitalWrite(statLED, HIGH);
+          digitalWrite(LED_BUILTIN, HIGH);
           delay(60);
-          digitalWrite(statLED, LOW);
+          digitalWrite(LED_BUILTIN, LOW);
           delay(40);
           for (int i = 0; i < 10; i++) {
             int size;
@@ -293,7 +286,7 @@ void loop() {
         }
         Serial.println("OSC confirm"); //<-------Serial print
         onoff = 1;
-        digitalWrite(statLED, HIGH);
+        digitalWrite(LED_BUILTIN, HIGH);
       }else{
         Serial.println("turning OFF");
         while(isConct != 1){
@@ -304,9 +297,9 @@ void loop() {
           Udp.endPacket(); // mark the end of the OSC Packet
           OSCMessage msgIn;
           //delay(timeOut);
-          digitalWrite(statLED, HIGH);
+          digitalWrite(LED_BUILTIN, HIGH);
           delay(70);
-          digitalWrite(statLED, LOW);
+          digitalWrite(LED_BUILTIN, LOW);
           delay(50);
           for (int i = 0; i < 10; i++) {
             int size;
@@ -323,9 +316,9 @@ void loop() {
         }
         Serial.println("OSC confirm"); //<-------Serial print
         for (int i = 0; i < 120; i++) {
-          digitalWrite(statLED, LOW);
+          digitalWrite(LED_BUILTIN, LOW);
           delay(500);
-          digitalWrite(statLED, HIGH);
+          digitalWrite(LED_BUILTIN, HIGH);
           delay(500);
         }
 
@@ -340,9 +333,9 @@ void loop() {
         Udp.write(0x0A);
         Udp.endPacket();
         for (int i = 0; i < 300; i++) {
-          digitalWrite(statLED, LOW);
+          digitalWrite(LED_BUILTIN, LOW);
           delay(500);
-          digitalWrite(statLED, HIGH);
+          digitalWrite(LED_BUILTIN, HIGH);
           delay(500);
         }
         Udp.begin(NETPwrCtrl_inPort);
@@ -357,7 +350,7 @@ void loop() {
         Udp.stop();
         Serial.println("NETPwrCtrl OFF"); //<-------Serial print
         onoff = 0;
-        digitalWrite(statLED, LOW);
+        digitalWrite(LED_BUILTIN, LOW);
       }
     }
   }
