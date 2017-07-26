@@ -51,6 +51,15 @@ boolean onoff = false;
 
 Bounce debouncer[NUM_BUTTONS] = {Bounce(), Bounce(), Bounce(), Bounce(), Bounce()};
 
+void blink(delay, reapet) {
+  for (int i = 0; i < reapet; i++) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(delay);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(delay);
+  }
+}
+
 void setup() {
   Serial.begin(9600);
   pinMode(pwrLED, OUTPUT);
@@ -197,24 +206,17 @@ void loop() {
       isConct = 0;
       if (onoff == 0) {
         Serial.println("turning ON"); //<-------Serial print
-        for (int i = 0; i < 10; i++) {
-          digitalWrite(LED_BUILTIN, HIGH);
-          delay(100);
-          digitalWrite(LED_BUILTIN, LOW);
-          delay(100);
-        }
+        blink(100, 10);
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
-          digitalWrite(LED_BUILTIN, HIGH);
           Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
           Udp.write("wer da?");
           Udp.write(0x0D);
           Udp.write(0x0A);
           Udp.endPacket();
-          delay(100);
-          digitalWrite(LED_BUILTIN, LOW);
+          delay(10);
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
         }
