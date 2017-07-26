@@ -2,8 +2,8 @@
 /*              INCLUDE
 /**************************************************/
 #include <SPI.h>
-#include <Ethernet2.h>
-#include <EthernetUdp2.h>
+#include <Ethernet.h>
+#include <EthernetUdp.h>
 #include <OSCMessage.h>
 #include <OSCBundle.h>
 
@@ -141,14 +141,14 @@ void loop() {
         change = true;
       }
     }
-    
+
     // Update the Bounce instances :
     debouncer1.update();
     debouncer2.update();
     debouncer3.update();
     debouncer4.update();
     debouncer5.update();
-    
+
     if ( debouncer1.fell() || debouncer1.rose() ) {
       button.add("/button/1").add((int)debouncer1.read());
       Serial.println(debouncer1.read());
@@ -252,7 +252,7 @@ void loop() {
         Udp.write(0x0D);
         Udp.write(0x0A);
         Udp.endPacket();
-        
+
         for (int i = 0; i < 60; i++) {
           digitalWrite(statLED, LOW);
           delay(500);
@@ -269,8 +269,8 @@ void loop() {
         Udp.endPacket();
         Udp.stop();
         Serial.println("NETPwrCtrl ON"); //<-------Serial print
-        
-        Udp.begin(inPort);       
+
+        Udp.begin(inPort);
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerON");
@@ -332,7 +332,7 @@ void loop() {
           digitalWrite(statLED, HIGH);
           delay(500);
         }
-        
+
         Udp.stop();
         Udp.begin(NETPwrCtrl_inPort);
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
