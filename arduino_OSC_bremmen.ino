@@ -51,12 +51,12 @@ boolean onoff = false;
 
 Bounce debouncer[NUM_BUTTONS] = {Bounce(), Bounce(), Bounce(), Bounce(), Bounce()};
 
-void blink(delay, reapet) {
+void blink(int pause, int reapet) {
   for (int i = 0; i < reapet; i++) {
     digitalWrite(LED_BUILTIN, HIGH);
-    delay(delay);
+    delay(pause);
     digitalWrite(LED_BUILTIN, LOW);
-    delay(delay);
+    delay(pause);
   }
 }
 
