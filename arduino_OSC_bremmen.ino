@@ -126,6 +126,7 @@ void LEDset(OSCMessage &msg, int addrOffset) {
 }
 
 void loop() {
+  main:
   if (onoff == 1) {
     boolean change = false;
     OSCBundle button;
@@ -210,7 +211,9 @@ void loop() {
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
+        int timeOut = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
+          timeOut++;
           Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
           Udp.write("wer da?");
           Udp.write(0x0D);
@@ -219,6 +222,10 @@ void loop() {
           delay(10);
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
+          if (timeOut > 20) { // if can't connect to relay
+            blink(200, 4);
+            goto loop;
+          }
         }
         Serial.println("NETPwrCtrl conected"); //<-------Serial print
 
@@ -235,6 +242,7 @@ void loop() {
 //        Udp.begin(inPort);
 
 
+        //turn on the computer with the realy
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
         Udp.write(0b10000100);
@@ -250,16 +258,18 @@ void loop() {
           digitalWrite(LED_BUILTIN, HIGH);
           delay(500);
         }
-        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
-        Udp.write("Sw");
-        Udp.write(0b10000110);
-        Udp.write("user1");
-        Udp.write("1234");
-        Udp.write(0x0D);
-        Udp.write(0x0A);
-        Udp.endPacket();
-        Udp.stop();
-        Serial.println("NETPwrCtrl ON"); //<-------Serial print
+
+        //let the computer turn on the projectiors
+        // Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+        // Udp.write("Sw");
+        // Udp.write(0b10000110);
+        // Udp.write("user1");
+        // Udp.write("1234");
+        // Udp.write(0x0D);
+        // Udp.write(0x0A);
+        // Udp.endPacket();
+        // Udp.stop();
+        // Serial.println("NETPwrCtrl ON"); //<-------Serial print
 
         Udp.begin(inPort);
         while(isConct != 1){
@@ -317,28 +327,21 @@ void loop() {
           }
         }
         Serial.println("OSC confirm"); //<-------Serial print
-        for (int i = 0; i < 120; i++) {
-          digitalWrite(LED_BUILTIN, LOW);
-          delay(500);
-          digitalWrite(LED_BUILTIN, HIGH);
-          delay(500);
-        }
-
-        Udp.stop();
-        Udp.begin(NETPwrCtrl_inPort);
-        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
-        Udp.write("Sw");
-        Udp.write(0b10000100);
-        Udp.write("user1");
-        Udp.write("1234");
-        Udp.write(0x0D);
-        Udp.write(0x0A);
-        Udp.endPacket();
-        for (int i = 0; i < 300; i++) {
-          digitalWrite(LED_BUILTIN, LOW);
-          delay(500);
-          digitalWrite(LED_BUILTIN, HIGH);
-          delay(500);
+        blink(500, 500);
+        while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
+          timeOut++;
+          Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+          Udp.write("wer da?");
+          Udp.write(0x0D);
+          Udp.write(0x0A);
+          Udp.endPacket();
+          delay(10);
+          packetSize = Udp.parsePacket();
+          Udp.read(UdpPacket, sizeof(UdpPacket));
+          if (timeOut > 20) { // if can't connect to relay
+            blink(200, 4);
+            goto loop;
+          }
         }
         Udp.begin(NETPwrCtrl_inPort);
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
@@ -352,7 +355,6 @@ void loop() {
         Udp.stop();
         Serial.println("NETPwrCtrl OFF"); //<-------Serial print
         onoff = 0;
-        digitalWrite(LED_BUILTIN, LOW);
       }
     }
   }
