@@ -224,7 +224,7 @@ void loop() {
           Udp.read(UdpPacket, sizeof(UdpPacket));
           if (timeOut > 20) { // if can't connect to relay
             blink(200, 4);
-            goto loop;
+            goto main;
           }
         }
         Serial.println("NETPwrCtrl conected"); //<-------Serial print
@@ -328,6 +328,11 @@ void loop() {
         }
         Serial.println("OSC confirm"); //<-------Serial print
         blink(500, 500);
+
+        char UdpPacket[] = "net-PwrCtrl";
+        Udp.begin(NETPwrCtrl_inPort);
+        int packetSize = 0;
+        int timeOut = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
           timeOut++;
           Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
@@ -340,7 +345,7 @@ void loop() {
           Udp.read(UdpPacket, sizeof(UdpPacket));
           if (timeOut > 20) { // if can't connect to relay
             blink(200, 4);
-            goto loop;
+            goto main;
           }
         }
         Udp.begin(NETPwrCtrl_inPort);
