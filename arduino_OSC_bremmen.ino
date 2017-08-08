@@ -20,6 +20,7 @@
 char BUTTON_PIN[NUM_BUTTONS] = { 2, 3, 4, 5, 6 };
 char LED_PIN[NUM_BUTTONS] = {8, 9, A3, 11, 7 };
 int rotoStat = 0;
+int timeOut = 0;
 ////////////////////////////////////////////////////
 //            Ethernet
 ////////////////////////////////////////////////////
@@ -211,7 +212,7 @@ void loop() {
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
-        int timeOut = 0;
+        timeOut = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
           timeOut++;
           Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
@@ -272,6 +273,7 @@ void loop() {
         // Serial.println("NETPwrCtrl ON"); //<-------Serial print
 
         Udp.begin(inPort);
+        timeOut = 0;
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerON");
