@@ -61,6 +61,28 @@ void blink(int pause, int reapet) {
   }
 }
 
+void displayError(int errorCode, int time) {
+  if (errorCode >= 0) {
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+      if(i <= errorCode){
+        digitalWrite(LED_PIN[i], HIGH);
+      }else{
+        digitalWrite(LED_PIN[i], LOW);
+      }
+    }
+  }else {
+    errorCode = -errorCode;
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+      if(i <= errorCode){
+        digitalWrite(LED_PIN[i], LOW);
+      }else{
+        digitalWrite(LED_PIN[i], HIGH);
+      }
+    }
+  }
+  delay(time);
+}
+
 void setup() {
   Serial.begin(9600);
   pinMode(pwrLED, OUTPUT);
@@ -128,6 +150,7 @@ void LEDset(OSCMessage &msg, int addrOffset) {
 
 void loop() {
   main:
+  displayError(0, 1);
   if (onoff == 1) {
     boolean change = false;
     OSCBundle button;
@@ -208,7 +231,9 @@ void loop() {
       isConct = 0;
       if (onoff == 0) {
         Serial.println("turning ON"); //<-------Serial print
+        displayError(1, 10);
         blink(100, 10);
+
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
@@ -224,7 +249,8 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
           if (timeOut > 20) { // if can't connect to relay
-            blink(200, 4);
+            Serial.println("can't connect to NETPwrCtrl"); //<-------Serial print
+            displayError(2, 4000);
             goto main;
           }
         }
@@ -243,7 +269,9 @@ void loop() {
 //        Udp.begin(inPort);
 
 
+        displayError(3, 10);
         //turn on the computer with the realy
+        Serial.println("NETPwrCtrl PC on"); //<-------Serial print
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
         Udp.write(0b10000100);
@@ -275,6 +303,7 @@ void loop() {
           Udp.beginPacket(outIp, QLabPort);
           msgOut.send(Udp); // send the bytes to the SLIP stream
           Udp.endPacket(); // mark the end of the OSC Packet
+          Serial.println("sending OSC ping"); //<-------Serial print
           OSCMessage msgIn;
           digitalWrite(LED_BUILTIN, HIGH);
           delay(60);
@@ -292,12 +321,23 @@ void loop() {
             }
             delay(10);
           }
+          timeOut++;
+          if (timeOut > 60) {
+            Serial.println("ping timeOut"); //<-------Serial print
+            displayError(4, 4000);
+            goto main;
+          }
         }
-        Serial.println("OSC confirm"); //<-------Serial print
+        Serial.println("OSC pong recived"); //<-------Serial print
         onoff = 1;
         digitalWrite(LED_BUILTIN, HIGH);
+        displayError(5, 4000);
+
       }else{
-        Serial.println("turning OFF");
+        Serial.println("starting shutdown sequence");
+        displayError(-5, 10);
+        Serial.println("sending ping OFF");
+        timeOut = 0;
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerOFF");
@@ -322,10 +362,17 @@ void loop() {
             }
             delay(10);
           }
-        }
-        Serial.println("OSC confirm"); //<-------Serial print
-        blink(500, 500);
+          timeOut++;
+          if (timeOut >= 60) {
+            Serial.println("Ping timeOut"); //<-------Serial print
+            displayError(-4, 4000);
+          }
 
+        }
+        Serial.println("pong recived"); //<-------Serial print
+        displayError(-3, 10);
+        blink(500, 500); //480 sec. delay
+        displayError(-2, 10);
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
@@ -341,10 +388,14 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
           if (timeOut > 20) { // if can't connect to relay
+            Serial.println("can't connect to NETPwrCtrl"); //<-------Serial print
+            displayError(-1, 4000);
             blink(200, 4);
             goto main;
           }
         }
+        Serial.println("connected to NETPwrCtrl"); //<-------Serial print
+        Serial.println("turning off"); //<-------Serial print
         Udp.begin(NETPwrCtrl_inPort);
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
@@ -357,6 +408,7 @@ void loop() {
         Udp.stop();
         Serial.println("NETPwrCtrl OFF"); //<-------Serial print
         onoff = 0;
+        displayError(0, 4000);
       }
     }
   }
