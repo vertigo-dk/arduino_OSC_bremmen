@@ -180,27 +180,6 @@ void loop() {
       }
     }
 
-    // if ( debouncer1.fell() || debouncer1.rose() ) {
-    //   button.add("/button/1").add((int)debouncer1.read());
-    //   Serial.println(debouncer1.read());
-    //   change = true;
-    // }
-    // if ( debouncer2.fell() || debouncer2.rose() ) {
-    //   button.add("/button/2").add((int)debouncer2.read());
-    //   change = true;
-    // }
-    // if ( debouncer3.fell() || debouncer3.rose() ) {
-    //   button.add("/button/3").add((int)debouncer3.read());
-    //   change = true;
-    // }
-    // if ( debouncer4.fell() || debouncer4.rose() ) {
-    //   button.add("/button/4").add((int)debouncer4.read());
-    //   change = true;
-    // }
-    // if ( debouncer5.fell() || debouncer5.rose() ) {
-    //   button.add("/button/5").add((int)debouncer5.read());
-    //   change = true;
-    // }
     if (change == true) {
       Serial.println("send osc");
       Udp.beginPacket(outIp, QLabPort);
@@ -255,20 +234,6 @@ void loop() {
           }
         }
         Serial.println("NETPwrCtrl conected"); //<-------Serial print
-
-//        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
-//        Udp.write("Sw");
-//        Udp.write(0b10000111);
-//        Udp.write("user1");
-//        Udp.write("1234");
-//        Udp.write(0x0D);
-//        Udp.write(0x0A);
-//        Udp.endPacket();
-//        Udp.stop();
-//        Serial.println("NETPwrCtrl ON"); //<-------Serial print
-//        Udp.begin(inPort);
-
-
         displayError(3, 10);
         //turn on the computer with the realy
         Serial.println("NETPwrCtrl PC on"); //<-------Serial print
@@ -282,18 +247,6 @@ void loop() {
         Udp.endPacket();
 
         blink(500, 60);
-
-        //let the computer turn on the projectiors
-        // Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
-        // Udp.write("Sw");
-        // Udp.write(0b10000110);
-        // Udp.write("user1");
-        // Udp.write("1234");
-        // Udp.write(0x0D);
-        // Udp.write(0x0A);
-        // Udp.endPacket();
-        // Udp.stop();
-        // Serial.println("NETPwrCtrl ON"); //<-------Serial print
 
         Udp.begin(inPort);
         timeOut = 0;
@@ -345,7 +298,6 @@ void loop() {
           msgOut.send(Udp); // send the bytes to the SLIP stream
           Udp.endPacket(); // mark the end of the OSC Packet
           OSCMessage msgIn;
-          //delay(timeOut);
           digitalWrite(LED_BUILTIN, HIGH);
           delay(70);
           digitalWrite(LED_BUILTIN, LOW);
