@@ -27,7 +27,6 @@ int rotoStat = 0;
 EthernetUDP Udp;
 
 //the self asignd IP
-IPAddress ip(192, 168, 1, 61);
 byte mac[6] = {0x90, 0xA2, 0xDA, 0x10, 0x38, 0x33};
 
 //port numbers
