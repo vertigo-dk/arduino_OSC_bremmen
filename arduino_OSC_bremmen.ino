@@ -213,6 +213,7 @@ void loop() {
         blink(100, 10);
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
+        Serial.print("connect to NETPwrCtrl_inPort");
         int packetSize = 0;
         int timeOut = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
@@ -222,6 +223,7 @@ void loop() {
           Udp.write(0x0D);
           Udp.write(0x0A);
           Udp.endPacket();
+          Serial.println("wer da?");
           delay(10);
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
