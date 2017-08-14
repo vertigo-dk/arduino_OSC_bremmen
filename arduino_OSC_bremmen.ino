@@ -2,8 +2,8 @@
 //              INCLUDE                           //
 ////////////////////////////////////////////////////
 #include <SPI.h>
-#include <Ethernet.h>
-#include <EthernetUdp.h>
+#include <Ethernet2.h>
+#include <EthernetUdp2.h>
 #include <OSCMessage.h>
 #include <OSCBundle.h>
 
