@@ -20,7 +20,6 @@
 char BUTTON_PIN[NUM_BUTTONS] = { 2, 3, 4, 5, 6 };
 char LED_PIN[NUM_BUTTONS] = {8, 9, A3, 11, 7 };
 int rotoStat = 0;
-int timeOut = 0;
 ////////////////////////////////////////////////////
 //            Ethernet
 ////////////////////////////////////////////////////
@@ -32,7 +31,6 @@ IPAddress ip(192, 168, 1, 61);
 byte mac[6] = {0x90, 0xA2, 0xDA, 0x10, 0x38, 0x33};
 
 //port numbers
-const unsigned int QLabPort = 53000;
 const unsigned int outPort = 53000;
 const unsigned int inPort = 8888;
 const unsigned int NETPwrCtrl_outPort = 75;
@@ -59,28 +57,6 @@ void blink(int pause, int reapet) {
     digitalWrite(LED_BUILTIN, LOW);
     delay(pause);
   }
-}
-
-void displayError(int errorCode, int time) {
-  if (errorCode >= 0) {
-    for (int i = 0; i < NUM_BUTTONS; i++) {
-      if(i <= errorCode){
-        digitalWrite(LED_PIN[i], HIGH);
-      }else{
-        digitalWrite(LED_PIN[i], LOW);
-      }
-    }
-  }else {
-    errorCode = -errorCode;
-    for (int i = 0; i < NUM_BUTTONS; i++) {
-      if(i <= errorCode){
-        digitalWrite(LED_PIN[i], LOW);
-      }else{
-        digitalWrite(LED_PIN[i], HIGH);
-      }
-    }
-  }
-  delay(time);
 }
 
 void setup() {
@@ -150,7 +126,6 @@ void LEDset(OSCMessage &msg, int addrOffset) {
 
 void loop() {
   main:
-  displayError(0, 1);
   if (onoff == 1) {
     boolean change = false;
     OSCBundle button;
@@ -180,9 +155,30 @@ void loop() {
       }
     }
 
+    // if ( debouncer1.fell() || debouncer1.rose() ) {
+    //   button.add("/button/1").add((int)debouncer1.read());
+    //   Serial.println(debouncer1.read());
+    //   change = true;
+    // }
+    // if ( debouncer2.fell() || debouncer2.rose() ) {
+    //   button.add("/button/2").add((int)debouncer2.read());
+    //   change = true;
+    // }
+    // if ( debouncer3.fell() || debouncer3.rose() ) {
+    //   button.add("/button/3").add((int)debouncer3.read());
+    //   change = true;
+    // }
+    // if ( debouncer4.fell() || debouncer4.rose() ) {
+    //   button.add("/button/4").add((int)debouncer4.read());
+    //   change = true;
+    // }
+    // if ( debouncer5.fell() || debouncer5.rose() ) {
+    //   button.add("/button/5").add((int)debouncer5.read());
+    //   change = true;
+    // }
     if (change == true) {
       Serial.println("send osc");
-      Udp.beginPacket(outIp, QLabPort);
+      Udp.beginPacket(outIp, outPort);
       button.send(Udp); // send the bytes to the SLIP stream
       Udp.endPacket(); // mark the end of the OSC Packet
       button.empty();
@@ -210,13 +206,11 @@ void loop() {
       isConct = 0;
       if (onoff == 0) {
         Serial.println("turning ON"); //<-------Serial print
-        displayError(1, 10);
         blink(100, 10);
-
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
-        timeOut = 0;
+        int timeOut = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
           timeOut++;
           Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
@@ -228,15 +222,26 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
           if (timeOut > 20) { // if can't connect to relay
-            Serial.println("can't connect to NETPwrCtrl"); //<-------Serial print
-            displayError(2, 4000);
+            blink(200, 4);
             goto main;
           }
         }
         Serial.println("NETPwrCtrl conected"); //<-------Serial print
-        displayError(3, 10);
+
+//        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+//        Udp.write("Sw");
+//        Udp.write(0b10000111);
+//        Udp.write("user1");
+//        Udp.write("1234");
+//        Udp.write(0x0D);
+//        Udp.write(0x0A);
+//        Udp.endPacket();
+//        Udp.stop();
+//        Serial.println("NETPwrCtrl ON"); //<-------Serial print
+//        Udp.begin(inPort);
+
+
         //turn on the computer with the realy
-        Serial.println("NETPwrCtrl PC on"); //<-------Serial print
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
         Udp.write(0b10000100);
@@ -246,17 +251,32 @@ void loop() {
         Udp.write(0x0A);
         Udp.endPacket();
 
-        blink(500, 60);
+        for (int i = 0; i < 60; i++) {
+          digitalWrite(LED_BUILTIN, LOW);
+          delay(500);
+          digitalWrite(LED_BUILTIN, HIGH);
+          delay(500);
+        }
+
+        //let the computer turn on the projectiors
+        // Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+        // Udp.write("Sw");
+        // Udp.write(0b10000110);
+        // Udp.write("user1");
+        // Udp.write("1234");
+        // Udp.write(0x0D);
+        // Udp.write(0x0A);
+        // Udp.endPacket();
+        // Udp.stop();
+        // Serial.println("NETPwrCtrl ON"); //<-------Serial print
 
         Udp.begin(inPort);
-        timeOut = 0;
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerON");
-          Udp.beginPacket(outIp, QLabPort);
+          Udp.beginPacket(outIp, outPort);
           msgOut.send(Udp); // send the bytes to the SLIP stream
           Udp.endPacket(); // mark the end of the OSC Packet
-          Serial.println("sending OSC ping"); //<-------Serial print
           OSCMessage msgIn;
           digitalWrite(LED_BUILTIN, HIGH);
           delay(60);
@@ -274,30 +294,20 @@ void loop() {
             }
             delay(10);
           }
-          timeOut++;
-          if (timeOut > 60) {
-            Serial.println("ping timeOut"); //<-------Serial print
-            displayError(4, 4000);
-            goto main;
-          }
         }
-        Serial.println("OSC pong recived"); //<-------Serial print
+        Serial.println("OSC confirm"); //<-------Serial print
         onoff = 1;
         digitalWrite(LED_BUILTIN, HIGH);
-        displayError(5, 4000);
-
       }else{
-        Serial.println("starting shutdown sequence");
-        displayError(-5, 10);
-        Serial.println("sending ping OFF");
-        timeOut = 0;
+        Serial.println("turning OFF");
         while(isConct != 1){
           OSCMessage msgOut("/ping");
           msgOut.add("powerOFF");
-          Udp.beginPacket(outIp, QLabPort);
+          Udp.beginPacket(outIp, outPort);
           msgOut.send(Udp); // send the bytes to the SLIP stream
           Udp.endPacket(); // mark the end of the OSC Packet
           OSCMessage msgIn;
+          //delay(timeOut);
           digitalWrite(LED_BUILTIN, HIGH);
           delay(70);
           digitalWrite(LED_BUILTIN, LOW);
@@ -314,17 +324,10 @@ void loop() {
             }
             delay(10);
           }
-          timeOut++;
-          if (timeOut >= 60) {
-            Serial.println("Ping timeOut"); //<-------Serial print
-            displayError(-4, 4000);
-          }
-
         }
-        Serial.println("pong recived"); //<-------Serial print
-        displayError(-3, 10);
-        blink(500, 500); //480 sec. delay
-        displayError(-2, 10);
+        Serial.println("OSC confirm"); //<-------Serial print
+        blink(500, 500);
+
         char UdpPacket[] = "net-PwrCtrl";
         Udp.begin(NETPwrCtrl_inPort);
         int packetSize = 0;
@@ -340,14 +343,10 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
           if (timeOut > 20) { // if can't connect to relay
-            Serial.println("can't connect to NETPwrCtrl"); //<-------Serial print
-            displayError(-1, 4000);
             blink(200, 4);
             goto main;
           }
         }
-        Serial.println("connected to NETPwrCtrl"); //<-------Serial print
-        Serial.println("turning off"); //<-------Serial print
         Udp.begin(NETPwrCtrl_inPort);
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
@@ -360,7 +359,6 @@ void loop() {
         Udp.stop();
         Serial.println("NETPwrCtrl OFF"); //<-------Serial print
         onoff = 0;
-        displayError(0, 4000);
       }
     }
   }
