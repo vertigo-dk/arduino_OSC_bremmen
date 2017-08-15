@@ -268,12 +268,12 @@ void loop() {
         Udp.write(0x0A);
         Udp.endPacket();
 
-        for (int i = 0; i < 60; i++) {
-          digitalWrite(LED_BUILTIN, LOW);
-          delay(500);
-          digitalWrite(LED_BUILTIN, HIGH);
-          delay(500);
-        }
+        // for (int i = 0; i < 60; i++) {
+        //   digitalWrite(LED_BUILTIN, LOW);
+        //   delay(500);
+        //   digitalWrite(LED_BUILTIN, HIGH);
+        //   delay(500);
+        // }
 
         //let the computer turn on the projectiors
         // Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
