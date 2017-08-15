@@ -60,9 +60,10 @@ void blink(int pause, int reapet) {
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial) {
-     // wait for serial port to connect. Needed for native USB
-  }
+  delay(1000);
+  // while (!Serial) {
+  //    // wait for serial port to connect. Needed for native USB
+  // }
   Serial.println("Setup");
   pinMode(pwrLED, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
