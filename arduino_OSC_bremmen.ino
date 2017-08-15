@@ -249,7 +249,7 @@ void loop() {
         //turn on the computer with the realy
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
-        Udp.write(0b10000100);
+        Udp.write(0b10000010);
         Udp.write("user1");
         Udp.write("1234");
         Udp.write(0x0D);
