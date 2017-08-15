@@ -254,19 +254,6 @@ void loop() {
             goto main;
           }
         }
-        Serial.println("NETPwrCtrl conected"); //<-------Serial print
-
-//        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
-//        Udp.write("Sw");
-//        Udp.write(0b10000111);
-//        Udp.write("user1");
-//        Udp.write("1234");
-//        Udp.write(0x0D);
-//        Udp.write(0x0A);
-//        Udp.endPacket();
-//        Udp.stop();
-//        Serial.println("NETPwrCtrl ON"); //<-------Serial print
-//        Udp.begin(inPort);
 
         Serial.println("NETPwrCtrl conected"); //<-------Serial print
 
@@ -329,6 +316,16 @@ void loop() {
           }
         }
         Serial.println("OSC confirm"); //<-------Serial print
+        Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
+        Udp.write("Sw");
+        Udp.write(0b10000111);
+        Udp.write("user1");
+        Udp.write("1234");
+        Udp.write(0x0D);
+        Udp.write(0x0A);
+        Udp.endPacket();
+        Serial.println("projector relay on"); //<-------Serial print
+
         onoff = 1;
         digitalWrite(LED_BUILTIN, HIGH);
       }else{
