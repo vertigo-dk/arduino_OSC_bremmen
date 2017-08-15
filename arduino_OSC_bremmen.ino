@@ -135,15 +135,34 @@ void loop() {
   if (onoff == 1) {
     boolean change = false;
     OSCBundle button;
-
-    if (rotoStat != map(analogRead(A0)+4, 0, 900, 0, 9)) {
-      if(map(analogRead(A0)+4, 0, 900, 0, 9) != 0) {
-        rotoStat = map(analogRead(A0)+4, 0, 900, 0, 9);
-        button.add("/rot").add((int)rotoStat);
-        Serial.print("rotoStat   ");
-        Serial.println(rotoStat);
-        change = true;
-      }
+    int sensorValue = analogRead(A0);
+    if(sensorValue > 1000) {
+      sensorValue = 9;
+    }else if (sensorValue > 850) {
+      sensorValue = 8;
+    }else if (sensorValue > 700) {
+      sensorValue = 7;
+    }else if (sensorValue > 650) {
+      sensorValue = 6;
+    }else if (sensorValue > 520) {
+      sensorValue = 5;
+    }else if (sensorValue > 400) {
+      sensorValue = 4;
+    }else if (sensorValue > 300) {
+      sensorValue = 3;
+    }else if (sensorValue > 180) {
+      sensorValue = 2;
+    }else if (sensorValue > 60) {
+      sensorValue = 1;
+    }else {
+      sensorValue = 0;
+    }
+    if (rotoStat != sensorValue) {
+      rotoStat = sensorValue;
+      button.add("/rot").add((int)rotoStat);
+      Serial.print("rotoStat   ");
+      Serial.println(rotoStat);
+      change = true;
     }
 
     // Update the Bounce instances :
