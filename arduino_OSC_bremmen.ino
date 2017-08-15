@@ -249,6 +249,7 @@ void loop() {
           packetSize = Udp.parsePacket();
           Udp.read(UdpPacket, sizeof(UdpPacket));
           if (timeOut > 20) { // if can't connect to relay
+            Serial.println("NETPwrCtrl timeOut"); //<-------Serial print
             blink(200, 4);
             goto main;
           }
@@ -267,8 +268,10 @@ void loop() {
 //        Serial.println("NETPwrCtrl ON"); //<-------Serial print
 //        Udp.begin(inPort);
 
+        Serial.println("NETPwrCtrl conected"); //<-------Serial print
 
         //turn on the computer with the realy
+        Serial.println("Computer relay ON"); //<-------Serial print
         Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
         Udp.write("Sw");
         Udp.write(0b10000010);
