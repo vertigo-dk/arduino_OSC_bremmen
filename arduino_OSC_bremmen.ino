@@ -43,6 +43,8 @@ IPAddress NETPwrIP(192, 168, 1, 50);
 boolean isConct = false;
 boolean onoff = false;
 
+int timeOut = 0;
+
 ////////////////////////////////////////////////////
 //            debounce
 ////////////////////////////////////////////////////
@@ -215,7 +217,7 @@ void loop() {
         Udp.begin(NETPwrCtrl_inPort);
         Serial.print("connect to NETPwrCtrl_inPort");
         int packetSize = 0;
-        int timeOut = 0;
+        timeOut = 0;
         while (memcmp(UdpPacket, "NET-PwrCtrl:NET-CONTROL", sizeof(UdpPacket)) != 0) {
           timeOut++;
           Udp.beginPacket(NETPwrIP, NETPwrCtrl_outPort);
@@ -275,15 +277,18 @@ void loop() {
         // Udp.endPacket();
         // Udp.stop();
         // Serial.println("NETPwrCtrl ON"); //<-------Serial print
-
+        Udp.stop();
         Udp.begin(inPort);
+        timeOut = 0;
         while(isConct != 1){
+          timeOut++;
           OSCMessage msgOut("/ping");
           msgOut.add("powerON");
           Udp.beginPacket(outIp, outPort);
           msgOut.send(Udp); // send the bytes to the SLIP stream
           Udp.endPacket(); // mark the end of the OSC Packet
           OSCMessage msgIn;
+          Serial.println("ping"); //<-------Serial print
           digitalWrite(LED_BUILTIN, HIGH);
           delay(60);
           digitalWrite(LED_BUILTIN, LOW);
@@ -305,8 +310,10 @@ void loop() {
         onoff = 1;
         digitalWrite(LED_BUILTIN, HIGH);
       }else{
+        timeOut = 0;
         Serial.println("turning OFF");
         while(isConct != 1){
+          timeOut++;
           OSCMessage msgOut("/ping");
           msgOut.add("powerOFF");
           Udp.beginPacket(outIp, outPort);
@@ -328,7 +335,12 @@ void loop() {
                 msgIn.route("/ping", isPing);
               }
             }
-            delay(10);
+            if (timeOut >60) { // if can't connect to relay
+              Serial.println("Computer timeOut"); //<-------Serial print
+              blink(200, 4);
+              goto main;
+            }
+            delay(100);
           }
         }
         Serial.println("OSC confirm"); //<-------Serial print
