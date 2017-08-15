@@ -312,7 +312,12 @@ void loop() {
                 msgIn.route("/ping", isPing, 0);
               }
             }
-            delay(10);
+            delay(100);
+          }
+          if (timeOut >60) { // if can't connect to relay
+            Serial.println("Computer timeOut"); //<-------Serial print
+            blink(200, 4);
+            goto main;
           }
         }
         Serial.println("OSC confirm"); //<-------Serial print
